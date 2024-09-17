@@ -5,12 +5,12 @@ import { useDropzone, FileRejection, DropzoneOptions } from "react-dropzone";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileIcon, UploadIcon } from "lucide-react";
+import { FileIcon, UploadIcon, DownloadIcon } from "lucide-react";
 
 export default function Component() {
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processedData, setProcessedData] = useState<any>(null);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
@@ -33,6 +33,7 @@ export default function Component() {
 
   const processPDF = async (file: File) => {
     setIsProcessing(true);
+    setDownloadUrl(null);
     const formData = new FormData();
     formData.append("file", file);
 
@@ -46,8 +47,9 @@ export default function Component() {
         throw new Error("Failed to process PDF");
       }
 
-      const data = await response.json();
-      setProcessedData(data);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      setDownloadUrl(url);
     } catch (error) {
       console.error("Error processing PDF:", error);
       alert("Error processing PDF. Please try again.");
@@ -110,14 +112,16 @@ export default function Component() {
                 {isProcessing && (
                   <p className="mt-2 text-yellow-400">Processing PDF...</p>
                 )}
-                {processedData && (
-                  <div className="mt-4 bg-gray-600 rounded p-4">
-                    <h3 className="text-lg font-semibold text-blue-400 mb-2">
-                      Processed Data:
-                    </h3>
-                    <pre className="text-xs text-gray-300 overflow-auto max-h-64">
-                      {JSON.stringify(processedData, null, 2)}
-                    </pre>
+                {downloadUrl && (
+                  <div className="mt-4">
+                    <a
+                      href={downloadUrl}
+                      download={`${file.name.split(".")[0]}_processed.json`}
+                      className="flex items-center space-x-2 text-green-400 hover:text-green-300"
+                    >
+                      <DownloadIcon className="w-5 h-5" />
+                      <span>Download Processed Data</span>
+                    </a>
                   </div>
                 )}
               </div>
